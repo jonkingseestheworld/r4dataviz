@@ -1,0 +1,103 @@
+---
+title: "bee-decline TT 2022-week2"
+date: "11/01/2022"
+output: github_output
+---
+
+Code created by 
+https://github.com/chris-gaskell/TidyTuesday/tree/main/2021-week-2_bee-decline
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+
+#install.packages("readr")
+#install.packages("tidyverse")
+
+```
+
+```{r libs}
+library(tidyverse)
+#library(ggpattern) # new package! 
+```
+
+
+```{r}
+colony <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-11/colony.csv')
+stressor <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-11/stressor.csv')
+
+
+```
+
+
+
+```{r top-10-plot}
+top_10 <- stressor %>%
+  group_by(state) %>%
+  summarise(total_stress = mean(stress_pct, na.rm = T)) %>% 
+  arrange(desc(total_stress)) %>% slice_head(n = 10) %>% ungroup()
+
+dat <- stressor %>% filter(state %in% c("Hawaii", "Kansas", "Arkansas", "New Mexico", "Florida", "Wisconsin", "United States", "Georgia", "California", "Alabama"))
+
+dat <- dat %>%
+  group_by(state, stressor) %>%
+  summarise(total_stress = mean(stress_pct, na.rm = T))
+```
+
+```{r}
+p <- dat %>%
+  ggplot(aes(x = stressor, y = total_stress, fill = stressor)) +
+  geom_col(colour = "black") +
+  scale_fill_manual(values = c("white", "black", "#985b10", "grey", "#896800", "#FFCC66")) +
+  coord_polar() +
+  labs(x = "", y = "Stressor Score") +
+  theme_bw()
+
+p <- p + facet_wrap(~state, nrow = 2) +
+  theme(
+    strip.text = element_text(
+      face = "bold", color = "black",
+      hjust = 0.5, size = 15
+    ),
+    strip.background = element_rect(fill = "#985b10",
+                                    linetype = "dotted")
+  )
+
+p <- p + theme(
+  axis.text.x = element_blank(),
+  legend.position = "bottom"
+)
+
+p <- p + labs(title = "The stressful life of being a bee" 
+       #subtitle = "..."
+       )+ theme(plot.title = element_text(size=24, hjust = 0))+ theme(plot.title = element_text(face = "bold"))
+
+p <- p + theme(plot.background = element_rect(fill = "#FFCC66"),
+               legend.box.background = element_rect(color="#985b10", fill = "red", size=2))+
+  labs(caption = "Data from #TidyTuesday project.
+       Plot by Chris Gaskell
+       @cgaskell92.")
+
+p <- p+ theme(
+ plot.margin=unit(c(0.5,8,0,1),"cm"))
+
+ggsave("img/bee_polar_plot.png", width = 13, height = 8, dpi = 300)
+
+```
+
+```{r}
+logo <- image_read(paste0(here("/"), "/Users/christophergaskell/Desktop/TidyTuesday/2021-week-2_bee-decline/bee.png"))
+plot <- image_read(paste0(here("/"), "/Users/christophergaskell/Desktop/TidyTuesday/bee.png"))
+logo <- logo %>%
+  image_scale("400") %>% 
+  image_background("black", flatten = T) #%>%
+ # image_border("black", "600x10") #%>%
+  #image_annotate("Powered By R", color = "white", size = 30, 
+                 #location = "+10+50", gravity = "northeast")
+#final_plot <- image_append(image_scale(c(plot, logo), "500"), stack = T)
+plot <- plot %>% 
+image_composite(logo, offset = "+3250+900") #%>%
+  #image_resize("800x800")
+#ggsave("final-track-times.png", width = , height = 4, dpi = 300)
+magick::image_write(plot, "bee.png")
+```
+
