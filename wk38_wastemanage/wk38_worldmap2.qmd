@@ -1,0 +1,86 @@
+---
+title: "wk38_waste_plots"
+date: "2022-09-20"
+format: html
+editor: visual
+---
+
+https://github.com/rfordatascience/tidytuesday/tree/master/data/2022/2022-09-20
+
+Load packages
+```{r}
+library(showtext)
+library(tidyverse)
+
+# Import fonts ----
+font_add_google(name = "Cabin Sketch", family = "title")
+font_add_google(name = "Josefin Slab", family = "subtitle")
+showtext_auto()
+```
+
+
+```{r}
+# Import dataset ----
+wwtp_df <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-09-20/HydroWASTE_v10.csv")
+
+```
+
+```{r}
+
+wwtp_df_clean <- wwtp_df %>%
+  filter(!STATUS %in% c("Closed", "Non-Operational", "Decommissioned"))
+
+wwtp_df_clean %>%
+  arrange(desc(POP_SERVED)) %>%
+  #arrange(desc(WASTE_DIS)) %>%
+  head(20)
+
+
+
+wwtp_df_clean %>%
+  ggplot(aes(x= log(DF), y= log(WASTE_DIS)) ) +
+  geom_point()
+
+
+
+```
+
+
+
+```{r}
+
+# Create plot ----
+
+world <- map_data("world") %>% 
+  filter(region != "Antarctica")
+
+
+p <- ggplot() +
+  geom_polygon(data = world,
+               aes(x = long, y = lat, group = group),
+               colour = "#1b1d46", fill = "#1b1d46") +
+  coord_fixed(1.3) +
+  geom_point(data = hydrowaste,
+             aes(x = LON_WWTP, y = LAT_WWTP),
+             colour = "#cccdc5", alpha = 0.15, size = 0.25) +
+  labs(title = "Distribution of wastewater treatment plants",
+       subtitle = "each dot represents a plant",
+       caption = "Visualisation: Jonathan Kitt | Data source: Marcedo et al, 2022 | #TidyTuesday 2022 week 38") +
+  theme_void() +
+  theme(panel.background = element_rect(fill = "#01000e", colour = "#01000e"),
+        plot.background = element_rect(fill = "#01000e", colour = "#01000e"),
+        plot.title = element_text(family = "title", colour = "#cccdc5",
+                                  size = 75, margin = margin(t = 15)),
+        plot.subtitle = element_text(family = "subtitle", colour = "#cccdc5",
+                                     size = 50, margin = margin(b = 15)),
+        plot.caption = element_text(colour = "white", size = 25, hjust = 0.5,
+                                    margin = margin(b = 10))
+  )
+
+
+
+# Save plot ----
+
+ggsave("figs/2022_09_20_wastewater.png", p, dpi = 320, width = 12, height = 6)
+
+```
